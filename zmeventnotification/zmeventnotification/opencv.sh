@@ -14,7 +14,16 @@
 # https://developer.nvidia.com/compute/machine-learning/cudnn/secure/v7.6.0.64/prod/10.1_20190516/Ubuntu18_04-x64/libcudnn7_7.6.0.64-1%2Bcuda10.1_amd64.deb
 # Place it in /config folder.  You wll need to have an account with Nvidia to download this package.
 #
-CUDNN_PACKAGE=libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb
+CUDNN_PACKAGES=("libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb" "libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb")
+
+#
+# github URL for opencv zip file download
+# current default is to pull the version 4.2.0 release
+OPENCV_URL=https://github.com/opencv/opencv/archive/4.2.0.zip
+# uncomment the following URL to pull commit to support cudnn for older nvidia gpus
+OPENCV_URL=https://github.com/opencv/opencv/archive/282fcb90dce76a55dc5f31246355fce2761a9eff.zip
+
+#
 #
 # Insure hook processing has been installed.
 #
@@ -55,7 +64,10 @@ logger "Cuda toolkit installed" -tEventServer
 # Install cuDNN package
 #
 logger "Installing cuDNN Package..." -tEventServer
-dpkg -i /config/$CUDNN_PACKAGE
+for pkg in ${CUDNN_PACKAGES[@]}; do
+    dpkg -i /config/$pkg
+done
+
 logger "cuDNN Package installed" -tEventServer
 
 #
@@ -70,11 +82,11 @@ logger "Cuda support packages installed" -tEventServer
 # Get opencv source
 #
 logger "Downloading opencv source..." -tEventServer
-wget -O opencv.zip https://github.com/opencv/opencv/archive/4.2.0.zip
+wget -O opencv.zip $OPENCV_URL
 wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.2.0.zip
 unzip opencv.zip
 unzip opencv_contrib.zip
-mv opencv-4.2.0 opencv
+mv ?(opencv-*) opencv
 mv opencv_contrib-4.2.0 opencv_contrib
 
 cd ~/opencv
@@ -103,6 +115,7 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	-D PYTHON_EXECUTABLE=/usr/bin/python3 \
 	-D BUILD_EXAMPLES=OFF ..
 
+exit
 make -j$(nproc)
 make install
 ldconfig
