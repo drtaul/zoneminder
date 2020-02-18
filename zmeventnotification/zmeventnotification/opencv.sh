@@ -80,6 +80,19 @@ echo "/usr/local/cuda/lib64" > /etc/ld.so.conf.d/cuda.conf
 ldconfig
 logger "Cuda toolkit installed" -tEventServer
 
+if [ -x /usr/bin/nvidia-smi ]; then
+	echo "##################################################################################"
+	echo ""
+	/usr/bin/nvidia-smi -l
+	echo "##################################################################################"
+	echo "Verify your Nvidia GPU is seen.  If not stop the script and fix the problem."
+	echo "Press any key to continue, or ctrl-C to stop."
+	read -n 1 -s
+else
+	echo "Cuda install failed.  'nvidia-smi' not found!"
+	exit
+fi
+
 #
 # Install cuDNN run time and dev packages
 #
@@ -128,6 +141,9 @@ logger "Opencv source downloaded" -tEventServer
 #
 logger "Compiling opencv..." -tEventServer
 
+echo "######################################################################################"
+echo ""
+
 cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	-D CMAKE_INSTALL_PREFIX=/usr/local \
 	-D INSTALL_PYTHON_EXAMPLES=OFF \
@@ -144,12 +160,20 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	-D PYTHON_EXECUTABLE=/usr/bin/python3 \
 	-D BUILD_EXAMPLES=OFF ..
 
+echo "######################################################################################"
+echo "Verify that CUDA and cuDNN are both enabled in the cmake output above."
+echo "Look for the lines with CUDA and cuDNN."
+echo "You may have to scroll up the page to see them."
+echo "If those lines don't show 'YES', then stop the script and fix the problem."
+echo "Check that you have the correct versions of CUDA ond cuDNN for your GPU."
+echo "Press any key to continue, or ctrl-C to stop."
+read -n 1 -s
+
 make -j$(nproc)
 make install
 ldconfig
 # now reinstall face-recognition package to ensure it detects GPU
 pip3 install face-recognition
-logger "Opencv compiled" -tEventServer
 
 #
 # Clean up/remove unnecessary packages
@@ -163,4 +187,4 @@ apt-get -y remove libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-
 apt-get -y remove libv4l-dev libxvidcore-dev libx264-dev libgtk-3-dev libatlas-base-dev gfortran
 apt-get -y autoremove
 
-logger "Opencv sucessfully compiled" -tEventServer
+logger "Opencv compile completed." -tEventServer
