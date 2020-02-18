@@ -131,17 +131,19 @@ logger "Opencv compiled" -tEventServer
 # Clean up/remove unnecessary packages
 #
 logger "Cleaning up..." -tEventServer
-cd ~
-rm -r opencv*
-rm /usr/local/cuda
-apt-get -y remove cuda-toolkit-10-1
-apt-get -y remove libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev
-apt-get -y remove libv4l-dev libxvidcore-dev libx264-dev libgtk-3-dev libatlas-base-dev gfortran
-apt-get -y autoremove
+
+# This cleanup sequence seems to be breaking opencv for cuda, comment out for now
+#cd ~
+#rm -r opencv*
+#rm /usr/local/cuda
+#apt-get -y remove cuda-toolkit-10-1
+#apt-get -y remove libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev
+#apt-get -y remove libv4l-dev libxvidcore-dev libx264-dev libgtk-3-dev libatlas-base-dev gfortran
+#apt-get -y autoremove
 
 #
 # Add opencv module wrapper
 #
-pip3 install opencv-contrib-python
+#pip3 install opencv-contrib-python
 
 logger "Opencv sucessfully compiled" -tEventServer
