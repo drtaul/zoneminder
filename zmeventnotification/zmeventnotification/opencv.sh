@@ -67,6 +67,13 @@ logger "Installing cuDNN Package..." -tEventServer
 for pkg in ${CUDNN_PACKAGES[@]}; do
     dpkg -i /config/$pkg
 done
+#
+cudadir=/usr/local/cuda-10.1
+if [ ! -d "$cudadir" ]; then
+    logger "Failed to install cuda toolkit"
+else
+    ln -s $cudadir /usr/local/cuda
+fi
 
 logger "cuDNN Package installed" -tEventServer
 
@@ -86,7 +93,7 @@ wget -O opencv.zip $OPENCV_URL
 wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.2.0.zip
 unzip opencv.zip
 unzip opencv_contrib.zip
-mv ?(opencv-*) opencv
+mv $(ls -d opencv-*) opencv
 mv opencv_contrib-4.2.0 opencv_contrib
 
 cd ~/opencv
