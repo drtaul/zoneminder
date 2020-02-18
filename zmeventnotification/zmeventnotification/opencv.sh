@@ -20,15 +20,20 @@
 # https://developer.nvidia.com/rdp/form/cudnn-download-survey
 # Place them in the /config folder.
 #
-CUDNN_RUN=libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb
-CUDNN_DEV=libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb
+CUDNN_RUN=libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
+CUDNN_DEV=libcudnn7-dev_7.6.5.32-1+cuda10.2_amd64.deb
 #
 # Download the cuda package for your GPU configuration.  You want the deb package for Ubuntu 18.04.
 # https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&target_distro=Ubuntu&target_version=1804&target_type=deblocal
 # Place the download in the /config folder.
 #
-CUDA_TOOL=cuda-repo-ubuntu1804-10-1-local-10.1.168-418.67_1.0-1_amd64.deb
-CUDA_KEY=/var/cuda-repo-10-1-local-10.1.168-418.67/7fa2af80.pub
+#CUDA_TOOL=cuda-repo-ubuntu1804-10-1-local-10.1.168-418.67_1.0-1_amd64.deb
+#CUDA_KEY=/var/cuda-repo-10-1-local-10.1.168-418.67/7fa2af80.pub
+# UNRAID has moved to driver version 440 and cuda 10.2
+CUDA_TOOL=cuda-repo-ubuntu1804-10-2-local-10.2.89-440.33.01_1.0-1_amd64.deb
+CUDA_PIN=cuda-ubuntu1804.pin
+CUDA_KEY=/var/cuda-repo-10-2-local-10.2.89-440.33.01/7fa2af80.pub
+CUDA_VER=10.2
 #
 #
 # github URL for opencv zip file download
@@ -50,15 +55,17 @@ fi
 logger "Compiling opencv with GPU Support" -tEventServer
 
 #
-# Remove hook installed opencv module
+# Remove hook installed opencv module and face-recognition module
 #
 pip3 uninstall opencv-contrib-python
+pip3 uninstall face-recognition
 
 #
 # Install cuda toolkit
 #
 logger "Installing cuda toolkit..." -tEventServer
 cd ~
+mv /config/$CUDA_PIN /etc/apt/preferences.d/cuda-repository-pin-600
 dpkg -i /config/$CUDA_TOOL
 apt-key add $CUDA_KEY
 apt-get update
@@ -81,7 +88,7 @@ logger "Installing cuDNN Package..." -tEventServer
 dpkg -i /config/$CUDNN_RUN
 dpkg -i /config/$CUDNN_DEV
 # check for expected install location
-cudadir=/usr/local/cuda-10.1
+cudadir=/usr/local/cuda-$CUDA_VER
 if [ ! -d "$cudadir" ]; then
     logger "Failed to install cuda toolkit"
 elif [ ! -L "/usr/local/cuda" ]; then
@@ -134,12 +141,13 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	-D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib/modules \
 	-D HAVE_opencv_python3=ON \
 	-D PYTHON_EXECUTABLE=/usr/bin/python3 \
-	-D CUDA_ARCH_BIN=7.5 \
 	-D BUILD_EXAMPLES=OFF ..
 
 make -j$(nproc)
 make install
 ldconfig
+# now reinstall face-recognition package to ensure it detects GPU
+pip3 install face-recognition
 logger "Opencv compiled" -tEventServer
 
 #
@@ -150,7 +158,7 @@ logger "Cleaning up..." -tEventServer
 cd ~
 rm -r opencv*
 # This cleanup sequence seems to be breaking opencv for cuda, comment out for now
-#apt-get -y remove cuda-toolkit-10-1
+#apt-get -y remove cuda
 #apt-get -y remove libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev
 #apt-get -y remove libv4l-dev libxvidcore-dev libx264-dev libgtk-3-dev libatlas-base-dev gfortran
 #apt-get -y autoremove
