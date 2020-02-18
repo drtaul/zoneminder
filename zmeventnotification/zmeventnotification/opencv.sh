@@ -91,6 +91,7 @@ dpkg -i /config/$CUDNN_DEV
 cudadir=/usr/local/cuda-$CUDA_VER
 if [ ! -d "$cudadir" ]; then
     logger "Failed to install cuda toolkit"
+    exit
 elif [ ! -L "/usr/local/cuda" ]; then
     ln -s $cudadir /usr/local/cuda
 fi
