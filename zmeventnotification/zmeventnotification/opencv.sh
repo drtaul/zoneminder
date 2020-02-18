@@ -158,10 +158,9 @@ logger "Cleaning up..." -tEventServer
 
 cd ~
 rm -r opencv*
-# This cleanup sequence seems to be breaking opencv for cuda, comment out for now
-#apt-get -y remove cuda
-#apt-get -y remove libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev
-#apt-get -y remove libv4l-dev libxvidcore-dev libx264-dev libgtk-3-dev libatlas-base-dev gfortran
-#apt-get -y autoremove
+apt-get -y remove cuda
+apt-get -y remove libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev
+apt-get -y remove libv4l-dev libxvidcore-dev libx264-dev libgtk-3-dev libatlas-base-dev gfortran
+apt-get -y autoremove
 
 logger "Opencv sucessfully compiled" -tEventServer
