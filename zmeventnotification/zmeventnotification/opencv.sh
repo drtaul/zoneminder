@@ -3,6 +3,8 @@
 #
 # Script to compile opencv with CUDA support.
 #
+#############################################################################################################################
+#
 # You need to prepare for compiling the opencv with CUDA support.
 #
 # You need to start with a clean docker image if you are going to recompile opencv.
@@ -10,20 +12,33 @@
 # Other SYstems: Remove the docker image then reinstall it.
 # Hook processing has to be enabled to run this script.
 #
-# Download the cuDNN package for your configuration from here:
-# https://developer.nvidia.com/compute/machine-learning/cudnn/secure/v7.6.0.64/prod/10.1_20190516/Ubuntu18_04-x64/libcudnn7_7.6.0.64-1%2Bcuda10.1_amd64.deb
-# Place it in /config folder.  You wll need to have an account with Nvidia to download this package.
+# Install the Unraid Nvidia plugin or the Nvidia docker and be sure your graphics card can be seen in the Zoneminder Docker.
+# You will not get a proper compile if your graphics card is not seen.
 #
-CUDNN_PACKAGES=("libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb" "libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb")
-
+# Download the cuDNN run time and dev packages for your GPU configuration.  You want the deb packages for Ubuntu 18.04.
+# You wll need to have an account with Nvidia to download these packages.
+# https://developer.nvidia.com/rdp/form/cudnn-download-survey
+# Place them in the /config folder.
+#
+CUDNN_RUN=libcudnn7_7.6.5.32-1+cuda10.1_amd64.deb
+CUDNN_DEV=libcudnn7-dev_7.6.5.32-1+cuda10.1_amd64.deb
+#
+# Download the cuda package for your GPU configuration.  You want the deb package for Ubuntu 18.04.
+# https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&target_distro=Ubuntu&target_version=1804&target_type=deblocal
+# Place the download in the /config folder.
+#
+CUDA_TOOL=cuda-repo-ubuntu1804-10-1-local-10.1.168-418.67_1.0-1_amd64.deb
+CUDA_KEY=/var/cuda-repo-10-1-local-10.1.168-418.67/7fa2af80.pub
+#
 #
 # github URL for opencv zip file download
 # current default is to pull the version 4.2.0 release
 OPENCV_URL=https://github.com/opencv/opencv/archive/4.2.0.zip
 # uncomment the following URL to pull commit to support cudnn for older nvidia gpus
 OPENCV_URL=https://github.com/opencv/opencv/archive/282fcb90dce76a55dc5f31246355fce2761a9eff.zip
-
 #
+#############################################################################################################################
+
 #
 # Insure hook processing has been installed.
 #
@@ -44,13 +59,11 @@ pip3 uninstall opencv-contrib-python
 #
 logger "Installing cuda toolkit..." -tEventServer
 cd ~
-wget https://developer.nvidia.com/compute/cuda/10.1/Prod/local_installers/cuda-repo-ubuntu1804-10-1-local-10.1.168-418.67_1.0-1_amd64.deb
-dpkg -i cuda-repo-ubuntu1804-10-1-local-10.1.168-418.67_1.0-1_amd64.deb
-apt-key add /var/cuda-repo-10-1-local-10.1.168-418.67/7fa2af80.pub
+dpkg -i /config/$CUDA_TOOL
+apt-key add $CUDA_KEY
 apt-get update
 apt-get -y upgrade -o Dpkg::Options::="--force-confold"
 apt-get -y install cuda
-rm -r cuda-repo*
 
 echo "export PATH=/usr/local/cuda/bin:$PATH" >/etc/profile.d/cuda.sh
 echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:/usr/local/lib:$LD_LIBRARY_PATH" >> /etc/profile.d/cuda.sh
@@ -61,17 +74,17 @@ ldconfig
 logger "Cuda toolkit installed" -tEventServer
 
 #
-# Install cuDNN package
+# Install cuDNN run time and dev packages
 #
 logger "Installing cuDNN Package..." -tEventServer
-for pkg in ${CUDNN_PACKAGES[@]}; do
-    dpkg -i /config/$pkg
-done
 #
+dpkg -i /config/$CUDNN_RUN
+dpkg -i /config/$CUDNN_DEV
+# check for expected install location
 cudadir=/usr/local/cuda-10.1
 if [ ! -d "$cudadir" ]; then
     logger "Failed to install cuda toolkit"
-else
+elif [ ! -L "/usr/local/cuda" ]; then
     ln -s $cudadir /usr/local/cuda
 fi
 
@@ -95,6 +108,7 @@ unzip opencv.zip
 unzip opencv_contrib.zip
 mv $(ls -d opencv-*) opencv
 mv opencv_contrib-4.2.0 opencv_contrib
+rm *.zip
 
 cd ~/opencv
 mkdir build
@@ -120,6 +134,7 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	-D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib/modules \
 	-D HAVE_opencv_python3=ON \
 	-D PYTHON_EXECUTABLE=/usr/bin/python3 \
+	-D CUDA_ARCH_BIN=7.5 \
 	-D BUILD_EXAMPLES=OFF ..
 
 make -j$(nproc)
@@ -132,18 +147,12 @@ logger "Opencv compiled" -tEventServer
 #
 logger "Cleaning up..." -tEventServer
 
+cd ~
+rm -r opencv*
 # This cleanup sequence seems to be breaking opencv for cuda, comment out for now
-#cd ~
-#rm -r opencv*
-#rm /usr/local/cuda
 #apt-get -y remove cuda-toolkit-10-1
 #apt-get -y remove libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev
 #apt-get -y remove libv4l-dev libxvidcore-dev libx264-dev libgtk-3-dev libatlas-base-dev gfortran
 #apt-get -y autoremove
-
-#
-# Add opencv module wrapper
-#
-#pip3 install opencv-contrib-python
 
 logger "Opencv sucessfully compiled" -tEventServer

@@ -285,7 +285,7 @@ mount -t tmpfs -o rw,nosuid,nodev,noexec,relatime,size=${SHMEM} tmpfs /dev/shm
 if [ "$INSTALL_HOOK" == "1" ]; then
 	echo "Installing machine learning modules & hooks..."
 
-	if [ -f /root/zmeventnotification/setup.py ]; then
+	if [ ! -f /root/setup.py ]; then
 		# If hook folder exists, copy files into image
 		if [ ! -d /config/hook ]; then
 			echo "Creating hook folder in config folder"
@@ -301,8 +301,8 @@ if [ "$INSTALL_HOOK" == "1" ]; then
 		pip3 install future
 		pip3 install /root/zmeventnotification
 		pip3 install opencv-contrib-python
-	    rm -rf /root/zmeventnotification/zmes_hook_helpers
 	fi
+    rm -rf /root/zmeventnotification/zmes_hook_helpers
 
 	# Download models files
 	if [ "$INSTALL_TINY_YOLO" == "1" ]; then
@@ -405,7 +405,7 @@ if [ "$INSTALL_HOOK" == "1" ]; then
  		pip3 install face_recognition
 	fi
 
-	rm -rf /root/zmeventnotification/setup.py
+	mv /root/zmeventnotification/setup.py /root/setup.py
 
 	echo "Hook installation completed"
 fi
