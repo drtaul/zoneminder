@@ -122,7 +122,6 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	-D PYTHON_EXECUTABLE=/usr/bin/python3 \
 	-D BUILD_EXAMPLES=OFF ..
 
-exit
 make -j$(nproc)
 make install
 ldconfig
@@ -134,6 +133,7 @@ logger "Opencv compiled" -tEventServer
 logger "Cleaning up..." -tEventServer
 cd ~
 rm -r opencv*
+rm /usr/local/cuda
 apt-get -y remove cuda-toolkit-10-1
 apt-get -y remove libjpeg-dev libpng-dev libtiff-dev libavcodec-dev libavformat-dev libswscale-dev
 apt-get -y remove libv4l-dev libxvidcore-dev libx264-dev libgtk-3-dev libatlas-base-dev gfortran
